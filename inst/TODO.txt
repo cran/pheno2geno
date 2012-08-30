@@ -1,0 +1,11 @@
+"To do" list
+----------------------------------------------------------------------
+This file is intended to contain a list of many of the additions and
+revisions that are planned for the package.  
+----------------------------------------------------------------------
+
+- Add a plot that shows multiple maps (3 or more) in comparison
+
+
+----------------------------------------------------------------------
+end of TODO.txt
