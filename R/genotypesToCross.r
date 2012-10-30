@@ -48,12 +48,10 @@ genotypesToCross.internal <- function(population, genotype=c("simulated","real")
         population$maps$physical <- mapMarkers.internal(population$maps$physical,population$offspring$genotypes$real, mapMode=1, verbose=verbose)
         if(is.null(population$maps$physical)) stop("No physical map provided in population$maps$physical\n")
         writeGenotypes.internal(population$offspring$genotypes$real, chr=population$maps$physical[rownames(population$offspring$genotypes$real),1], positions=population$maps$physical[rownames(population$offspring$genotypes$real),2], outputFile=outputFile, verbose=verbose, debugMode=debugMode)
-        genotypes <- names(table(population$offspring$genotypes$real))
       }else if(orderUsing=="map_genetic"){
         population$maps$genetic <- mapMarkers.internal(population$maps$genetic,population$offspring$genotypes$real, mapMode=1, verbose=verbose)
         if(is.null(population$maps$genetic)) stop("No genetic map provided in population$maps$genetic\n")
         writeGenotypes.internal(population$offspring$genotypes$real, chr=population$maps$genetic[rownames(population$offspring$genotypes$real),1], positions=population$maps$genetic[rownames(population$offspring$genotypes$real),2], outputFile=outputFile, verbose=verbose, debugMode=debugMode)
-        genotypes <- names(table(population$offspring$genotypes$real))
       }
     
     }
@@ -64,17 +62,14 @@ genotypesToCross.internal <- function(population, genotype=c("simulated","real")
       genoL <- length(table(population$offspring$genotypes$simulated))
       if(orderUsing=="none"){
         writeGenotypes.internal(population$offspring$genotypes$simulated, chr=1, outputFile=outputFile, verbose=verbose, debugMode=debugMode)
-        genotypes <- names(table(population$offspring$genotypes$simulated))
       }else if(orderUsing=="map_physical"){
         population$maps$physical <- mapMarkers.internal(population$maps$physical,population$offspring$genotypes$simulated, mapMode=1, verbose=verbose)
         if(is.null(population$maps$physical)) stop("orderUsing = map_physical chosen, but no physical map provided in population$maps$physical\n")
         writeGenotypes.internal(population$offspring$genotypes$simulated, chr=population$maps$physical[rownames(population$offspring$genotypes$simulated),1], positions=population$maps$physical[rownames(population$offspring$genotypes$simulated),2], outputFile=outputFile, verbose=verbose, debugMode=debugMode)
-        genotypes <- names(table(population$offspring$genotypes$simulated))
       }else if(orderUsing=="map_genetic"){
         population$maps$genetic <- mapMarkers.internal(population$maps$genetic,population$offspring$genotypes$simulated, mapMode=1, verbose=verbose)
         if(is.null(population$maps$genetic)) stop("orderUsing = map_physical chosen, but no genetic map provided in population$maps$genetic\n")
         writeGenotypes.internal(population$offspring$genotypes$simulated, chr=population$maps$genetic[rownames(population$offspring$genotypes$simulated),1], positions=population$maps$genetic[rownames(population$offspring$genotypes$simulated),2], outputFile=outputFile, verbose=verbose, debugMode=debugMode)
-        genotypes <- names(table(population$offspring$genotypes$simulated))
       }
     }
   }  
@@ -174,7 +169,6 @@ writeGenotypes.internal <- function(genotypeMatrix,chr=1,positions=NULL,outputFi
   if(verbose && debugMode==1) cat("writeGenotypes starting.\n")
   if(is.null(positions)) positions <- 1:nrow(genotypeMatrix)
   else if(length(positions)!=length(1:nrow(genotypeMatrix))) stop("Posistions object is not correct, check help files.\n")
-  if(verbose && debugMode==1) cat("writeGenotypes starting.\n")
   genotypeMatrix <- cleanNames.internal(genotypeMatrix)
   write.table(cbind(rownames(genotypeMatrix),chr,positions,genotypeMatrix),file=outputFile,sep=",",quote=FALSE,
     col.names=FALSE,append=TRUE,row.names=FALSE)

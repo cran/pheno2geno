@@ -2,9 +2,9 @@
 # readFiles.r
 #
 # Copyright (c) 2010-2012 GBIC: Danny Arends, Konrad Zych and Ritsert C. Jansen
-# last modified May, 2012
+# last modified Nov, 2012
 # first written Nov, 2011
-# Contains: read.population mapMarkers.internal, gffParser, correctRowLoc.internal
+# Contains: read.population mapMarkers.internal, correctRowLoc.internal
 #           probesLocation.internal, orrectRowGff.internal
 #
 
@@ -22,92 +22,230 @@
 # OUTPUT:
 #   An object of class population 
 #
-read.population <- function(offspring="offspring",founders="founders",map="maps",founders_groups,populationType=c("riself", "f2", "bc", "risib"),verbose=FALSE,debugMode=0){
+read.population <- function(offspring = "offspring", founders = "founders", map = "map", foundersGroups, populationType = c("riself", "f2", "bc", "risib"),
+  readMode = c("normal","HT"), verbose = FALSE, debugMode = 0, ...){
+
+  ### checks
+  populationType <- match.arg(populationType)
+  readMode <- match.arg(readMode)
+  
+  
+  ### file names
+  fileFoundersPheno  <- paste(founders,"_phenotypes.txt",sep="")
+  fileOffspringPheno <- paste(offspring,"_phenotypes.txt",sep="")
+  fileOffspringGeno  <- paste(offspring,"_genotypes.txt",sep="")
+  fileAnnotations    <- paste(offspring,"_annotations.txt",sep="")
+  fileMapPhys        <- paste(map,"_physical.txt",sep="")
+  fileMapGen         <- paste(map,"_genetic.txt",sep="")
+
+  ### initializing  
   s <- proc.time()
   if(verbose && debugMode==1) cat("read.population starting.\n")
   population <- NULL
-  if(missing(founders_groups)){ 
-    stop("Specify founders_groups!\n")
-  }
-  populationType <- match.arg(populationType)
-  #**********READING CHILDREN PHENOTYPIC DATA*************
-  filename <- paste(offspring,"_phenotypes.txt",sep="")
-  if(file.exists(filename)){
-    if(verbose) cat("Found phenotypic file for offspring:",filename,"and will store  it in population$offspring$phenotypes\n")
-    offspring_phenotypes <- read.table(filename,sep="\t",header=TRUE)
-    offspring_phenotypes <- as.matrix(offspring_phenotypes)
-    population <- add.to.populationSub.internal(population,offspring_phenotypes,"offspring$phenotypes")
-    doCleanUp.internal()
-  }else{
-    stop("No phenotype file for offspring: ",filename," this file is essentiall, you have to provide it\n")
-  }
   
-  #**********READING PARENTAL PHENOTYPIC DATA*************
-  filename <- paste(founders,"_phenotypes.txt",sep="")
-  if(file.exists(filename)){
-    if(verbose) cat("Found phenotypic file for parents:",filename,"and will store it in population$founders$phenotypes\n")
-    founders <- read.table(filename,sep="\t",header=TRUE)
-    founders <- as.matrix(founders)
-    population <- add.to.populationSub.internal(population, founders, "founders")
-    #removing from founders probes that are not in children:
-    population$founders$phenotypes <- mapMarkers.internal(population$founders$phenotypes,population$offspring$phenotypes, mapMode=1, verbose=verbose)
-    doCleanUp.internal()
+  ### offspring phenotypic file
+  if(!file.exists(fileOffspringPheno)){
+    stop("No phenotype file for offspring: ",fileOffspringPheno," this file is essential, you have to provide it\n")
   }else{
-    stop("No phenotype file for parents: ",filename," this file is essentiall, you have to provide it\n")
+    if(verbose)  cat("File:",fileOffspringPheno,"found and will be processed.\n")
+    if(readMode == "normal"){
+      population                      <- applyFunctionToFile(fileOffspringPheno, population, sep="\t", header=TRUE, FUN=normalModeReading)
+    }else{
+      population$offspring$phenotypes <- fileOffspringPheno
+    }
   }
+
+  ### founders phenotypic file
+  if(!file.exists(fileFoundersPheno)){
+    ### simulate data if there is no file
+    if(verbose)cat("No phenotype file for founders: ",fileFoundersPheno,". Founder phenotypes will be simulated.\n")
     
-  #**********FOUNDERS GROUPS*************
-  if(length(founders_groups)!=ncol(population$founders$phenotypes)){
-    stop("Length of founders_groups should be equal to the number of columns in founder phenotype file.")
-  }else if((sum(founders_groups==1)+sum(founders_groups==0))!=length(founders_groups)){
-    stop("founders_groups should contain only 0s and 1s.")
+    if(readMode == "normal"){
+      population                         <- simulateParentalPhenotypes(population, population$offspring$phenotypes, populationType)
+    }
+    ### if the mode is HT, we don't simulate founders but just judge the variance in the offspring while converting phenotypes to genotypes
+    
   }else{
-    population$founders$groups <- founders_groups
+    ### read the file if present
+    if(verbose)  cat("File:",fileFoundersPheno,"found and will be processed.\n")
+    
+    ### check if there is an information about the founders groups
+    if(missing(foundersGroups)) stop("No information about founders groups provided.\n")
+    
+    ### founders groups should be a sequence of 0s and 1s
+    if(any(foundersGroups!=0 && foundersGroups!=1)) stop("Founders groups attribute is incorrect.\n")
+    population                        <- applyFunctionToFile(fileFoundersPheno,population,sep="\t", header=TRUE, verbose=verbose, FUN=normalModeReading)
+    if(length(foundersGroups)         != ncol(population$founders$phenotypes)) stop("Founders groups attribute is incorrect.\n")
   }
   
-  #**********READING CHILDREN GENOTYPIC DATA*************
-  filename <- paste(offspring,"_genotypes.txt",sep="")
-  if(file.exists(filename)){
-    if(verbose) cat("Found genotypic file for offspring:",filename,"and will store  it in population$offspring$genotypes$real\n")
-    offspring_genotypes <- read.table(filename,sep="\t",header=TRUE)
-    offspring_genotypes <- as.matrix(offspring_genotypes)
-    population <- add.to.population(population, offspring_genotypes, "offspring$genotypes")
-    doCleanUp.internal()
-  }else{
-    if(verbose)cat("No genotypic file for offspring:",filename,"genotypic data for offspring will be simulated\n")
-  }
+  class(population) <- c("population",populationType)
   
-  #**********READING GENETIC MAP*************
-  filename <- paste(map,"_genetic.txt",sep="")
-  if(file.exists(filename)){
-    if(verbose) cat("Found genotypic file for offspring:",filename,"and will store  it in population$maps$genetic\n")
-    maps_genetic <- read.table(filename,sep="\t",row.names=1,header=FALSE)
-    maps_genetic <- as.matrix(maps_genetic)
-    population <- add.to.population(population, maps_genetic, "maps$genetic")
-    doCleanUp.internal()
-  }else{
-    if(verbose)cat("No genetic map file:",filename,".\n")
-  }
+  ### annotations file
+  population <- readSingleFile(population, fileAnnotations, "annotations", verbose=verbose, header=TRUE)
+
+  ### offspring genotypic file
+  population <- readSingleFile(population, fileOffspringGeno, "offspring$genotypes", verbose=verbose, header=TRUE)
   
-  #**********READING PHYSICAL MAP*************
-  filename <- paste(map,"_physical.txt",sep="")
-  if(file.exists(filename)){
-    if(verbose) cat("Found genotypic file for offspring:",filename,"and will store  it in population$maps$physical\n")
-    physical <-  read.table(filename,sep="\t",row.names=1,header=FALSE)
-    physical <- as.matrix(physical)
-    population <- add.to.population(population, physical, "maps$physical")
-    doCleanUp.internal()
-  }else{
-    if(verbose)cat("No physical map file:",filename,".\n")
-  }
-  
+  ### physical map
+  population <- readSingleFile(population, fileMapPhys, "maps$physical", verbose=verbose, header=FALSE)
+
+  ### genetic map
+  population <- readSingleFile(population, fileMapGen, "maps$genetic", verbose=verbose, header=FALSE)
+
+  ### TO BE REMOVED when generate.biomarkers is corrected
+  population$sliceSize <- 5000
   #**********FINALIZING FUNCTION*************
   e <- proc.time()
-  if(verbose) cat("read.population done in",(e-s)[3],"seconds.\n")
-  class(population) <- c("population", populationType)
-  doCleanUp.internal()
+  if(verbose && debugMode==2) cat("read.population finished after",(e-s)[3],"seconds.\n")
   invisible(population)
 }
+
+#  readSingleFile
+#
+# DESCRIPTION:
+#  Reads single geno/phenotypic file into R environment into special object.
+# PARAMETERS:
+#   - population - an object of class population
+#   - filename - name of the file that will be processed
+#   - fileType - type of the file that will be processed (information about what type of data it contains)
+# OUTPUT:
+#   An object of class population 
+#
+readSingleFile   <- function(population, filename, fileType, verbose=FALSE, ...){
+  if(file.exists(filename)){
+    if(verbose)  cat("File:",filename,"found and will be processed.\n")
+    dataRead     <- read.table(filename,sep="\t", row.names=1, ...)
+    population   <- add.to.population(population, dataRead, fileType)
+    doCleanUp.internal()
+  }else{
+    if(verbose) cat("File:",filename,"not found.\n")
+  }
+  invisible(population)
+}
+
+#  applyFunctionToFile
+#
+# DESCRIPTION:
+#  Reads a file line by line, applying a function to each of the lines.
+# PARAMETERS:
+#   - filename - name of the file that will be processed
+#   - header - does the file contain header
+#   - sep - separator of the values in the file
+#   - FUN - function to be applied to the lines of the file 
+#   - ... - parameters passed to FUN
+# OUTPUT:
+#   A matrix with values from the file.
+#
+applyFunctionToFile <- function(filename, population, header=TRUE, sep="\t", FUN, verbose=FALSE, ...){
+  filePointer <- file(filename,"r")
+  if(header){
+    headerLine <- readLines(filePointer, n=1)
+    header     <- unlist(strsplit(headerLine,sep))
+  }
+  res          <- NULL
+  lineNR       <- 0
+  
+  ### reading the first non-header line
+  curLine <- readLines(filePointer, n=1)
+  while(length(curLine) > 0){
+    lineNR            <- lineNR + 1
+    if(verbose && lineNR%%10000==0){cat("processing line:",lineNR,"\n")
+    print(curLine)}
+    curLineSplitted   <- strsplit(curLine,sep)[[1]]
+    
+    ### changing it into a matrix for easier handling
+    curRow           <- matrix(as.numeric(curLineSplitted[-1]),1,length(curLineSplitted)-1)
+    rownames(curRow) <- lineNR
+    
+    ### if there is header, use it as colnames
+    if(!is.null(header)){
+      if(length(header)!= ncol(curRow)){
+        stop("Incorect length of line: ",lineNR," it is: ",ncol(curRow)," instead of: ",length(header),"\n")
+      }else{
+        colnames(curRow) <- header
+      }
+    }
+    
+    ### execute the function specified by user and rbind results
+    population <-  FUN(curRow, population, lineNR, ...)
+    curLine <- readLines(filePointer, n=1)
+  }
+  close(filePointer)
+  invisible(res)
+}
+
+#  tTestByLine
+#
+# DESCRIPTION:
+#  T.test a single line of a file (formated as a matrix with one row)
+# PARAMETERS:
+#   - dataMatrix - matrix containing data (with one row)
+#   - dataGroups - specifing which columns of the matrix belong to which group
+#   - threshold - threshold for pval
+# OUTPUT:
+#   An input matrix, if the pval is below the threshold. Otherwise NULL
+#
+tTestByLine <- function(dataMatrix, population, lineNR, dataGroups, threshold){
+  group0    <- as.numeric(dataMatrix[,which(dataGroups == 0)])
+  group1    <- as.numeric(dataMatrix[,which(dataGroups == 1)])
+  if(length(group0)<3 || length(group1)<3) stop("Not enough observations to perform the t.test.\n")
+  res       <- t.test(group0, group1)
+  if(res$p.value < threshold) return(dataMatrix)
+  invisible(NULL)
+}
+
+#  normalModeReading
+#
+# DESCRIPTION:
+#  Returns the input object without changing it
+# PARAMETERS:
+#   - dataMatrix - matrix containing data (with one row)
+# OUTPUT:
+#   An input matrix.
+#
+normalModeReading <- function(dataMatrix, population, lineNR){
+  population$offspring$phenotypes <- checkAndBind(population$offspring$phenotypes,dataMatrix,lineNR)
+  invisible(population)
+}
+
+checkAndBind <- function(dataMatrix, toBind, lineNR){
+ ### if the population object is not empty then we need to check if we can put it into phenotype matrix 
+  if(!is.null(dataMatrix)){
+    ### can we rbind it?
+    if(ncol(toBind) != ncol(dataMatrix)){
+      stop("Incorect length of line: ",lineNR," it is: ",ncol(toBind)," instead of: ",ncol(dataMatrix),"\n")
+    }
+  }### if the object is still empty - we need to fill it
+  dataMatrix <- rbind(dataMatrix,toBind)
+  invisible(dataMatrix)
+}
+
+#  simulateParentalPhenotypes
+#
+# DESCRIPTION:
+#  Simulating founders phenotypes based on offspring data
+# PARAMETERS:
+#   - population - an object of class population
+#   - populationType - breeeding scheme used in the population
+#   - offspringPhenotypes - matrix containing phenotypes of the offspring
+# OUTPUT:
+#   An object of class population
+#
+simulateParentalPhenotypes <- function(population, offspringPhenotypes, populationType){
+  cat("No founders phenotype data provided, it will be simulated!\n")
+  half     <- floor(ncol(offspringPhenotypes)/2)
+  end      <- ncol(offspringPhenotypes)
+  founders <- t(apply(offspringPhenotypes, 1, function(x){
+    x      <- sort(x)
+    c( mean(x[1:half],na.rm=TRUE), mean(x[2:(half+1)],na.rm=TRUE), mean(x[3:(half+2)],na.rm=TRUE),
+       mean(x[(half+1):end],na.rm=TRUE), mean(x[(half):(end-1)],na.rm=TRUE), mean(x[(half-1):(end-2)],na.rm=TRUE))
+  }))
+  population$flags           <- c(population$flags,"noParents")
+  population                 <- add.to.populationSub.internal(population, founders, "founders", populationType=populationType)
+  population$founders$groups <- c(0,0,0,1,1,1)
+  return(population)
+}
+
 
 ############################################################################################################
 #                  *** mapMarkers.internal ***

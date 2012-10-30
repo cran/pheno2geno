@@ -30,8 +30,7 @@ set.geno.from.cross(cross,population,map=c("genetic","physical"))
 }
 
 \details{
-This function pull genotypes with a map from the cross object and puts them into provided population object. This is useful if the same cross is saturated and smoothed
-(using \code{\link{smooth.geno}}) multiple times to fix the markers that were already smoothed.
+This function pull genotypes with a map from the cross object and puts them into provided population object. This is useful if the same cross is saturated multiple times.
 }
 
 \author{
@@ -47,7 +46,6 @@ This function pull genotypes with a map from the cross object and puts them into
 
 \seealso{
   \itemize{
-    \item{\code{\link{smooth.geno}}}{ - Remove genotyping errors by smoothing.}
     \item{\code{\link{reorganizeMarkersWithin}}}{ - Apply new ordering on the cross object usign ordering vector.}
     \item{\code{\link{assignChrToMarkers}}}{ - Create ordering vector from chromosome assignment vector.}
     \item{\code{\link{cross.denovo}}}{ - Create de novo genetic map or chromosome assignment vector.}

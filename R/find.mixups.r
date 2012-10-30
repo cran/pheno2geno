@@ -31,7 +31,7 @@ find.mixups <- function(population,map=c("genetic","physical"),n.qtls=50,thresho
   if(n.qtls<0 || n.qtls>nrow(population$offspring$phenotypes)){
     stop("Value of n.qtls is too high or too low.\n")
   }
-  map <- checkParameters.internal(map,c("genetic","physical"),"map")
+  map <- match.arg(map)
   if(map=="genetic"){
     matchingMarkers <- which(rownames(population$offspring$genotypes$real)%in%rownames(population$maps$genetic))
     if(length(matchingMarkers)<=0) stop("Marker names on the map and in the genotypes doesn't match!\n")
@@ -43,12 +43,22 @@ find.mixups <- function(population,map=c("genetic","physical"),n.qtls=50,thresho
     ### THAT's just ugly trick to make saving the cross with a lot fo phenotypes faster.
     population10pheno <- population
     population10pheno$offspring$phenotypes <- population10pheno$offspring$phenotypes[1:10,]
-    aa <- tempfile()
-    sink(aa)
-    returncross <- genotypesToCross.internal(population10pheno,"real","map_genetic")
-    returncross$pheno <- t(population$offspring$phenotypes)
-    sink()
-    file.remove(aa)
+    ### creation of the cross
+    tryCatch({
+      aa <- tempfile()
+      sink(aa)
+      returncross <- genotypesToCross.internal(population10pheno,"real","map_genetic")
+      returncross$pheno <- t(population$offspring$phenotypes)
+    },
+    error= function(err){
+      stop(paste("ERROR in find.mixups while creating cross:  ",err))
+      sink()            # sink if errored -> otherwise everything is sinked into aa file
+      # file is not removed -> contains output that may help with debugging
+    },
+    finally={
+      sink()
+      file.remove(aa) # no error -> close sink and remove unneeded file
+    })
   }else{
     matchingMarkers <- which(rownames(population$offspring$genotypes$real)%in%rownames(population$maps$physical))
     if(length(matchingMarkers)<=0) stop("Marker names on the map and in the genotypes doesn't match!\n")
@@ -60,12 +70,22 @@ find.mixups <- function(population,map=c("genetic","physical"),n.qtls=50,thresho
     #for faster creation of cross
     population10pheno <- population
     population10pheno$offspring$phenotypes <- population10pheno$offspring$phenotypes[1:10,]
-    aa <- tempfile()
-    sink(aa)
-    returncross <- genotypesToCross.internal(population10pheno,"real","map_physical")
-    returncross$pheno <- t(population$offspring$phenotypes)
-    sink()
-    file.remove(aa)
+    ### creation of the cross
+    tryCatch({
+      aa <- tempfile()
+      sink(aa)
+      returncross <- genotypesToCross.internal(population10pheno,"real","map_physical")
+      returncross$pheno <- t(population$offspring$phenotypes)
+    },
+    error= function(err){
+      stop(paste("ERROR in find.mixups while creating cross:  ",err))
+      sink()            # sink if errored -> otherwise everything is sinked into aa file
+      # file is not removed -> contains output that may help with debugging
+    },
+    finally={
+      sink()
+      file.remove(aa) # no error -> close sink and remove unneeded file
+    })
   }
   returncross <- calc.genoprob(returncross)
   qtls_found <- 0
@@ -74,6 +94,7 @@ find.mixups <- function(population,map=c("genetic","physical"),n.qtls=50,thresho
   scores <- vector(mode="numeric",length=ncol(population$offspring$phenotypes))
   names(scores) <- colnames(population$offspring$phenotypes)
   done <- 0
+  if(verbose) cat("--- starting the QTL analysis ---\n")
   while(qtls_found<n.qtls){
     phenotype <- round(runif(1,1,nrow(population$offspring$phenotypes)))
     cur_phenotype <- matrix(scanone(returncross,pheno.col=phenotype,method="hk")[,3],1,nrow(population$offspring$genotypes$real))

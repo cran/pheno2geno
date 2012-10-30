@@ -8,12 +8,15 @@
 }
 
 \usage{
-  scan.qtls(population,map=c("genetic","physical"),step=0.1,verbose=FALSE)
+  scan.qtls(population,map=c("genetic","physical"), env, epistasis = c("scan","ignore"),
+  step=0.1,verbose=FALSE)
 }
 
 \arguments{
   \item{population}{ An object of class \code{\link{population}}. See \code{\link{create.population}} for details. }
   \item{map}{ Which map (from ones stored in population$maps) should be used fo assigning chromosomes on the created map}
+  \item{env}{ Vector of environmental conditions - for each of the individuals specifies a condition. Ignored if missing.}
+  \item{epistasis}{ Should the two markers epistasis be scanned for. It is a heavy procedure!}
   \item{step}{ Maximum distance (in cM) between positions at which the genotype probabilities are calculated, though for step = 0, probabilities are calculated only at the marker locations. See \code{\link{calc.genoprob} for more information} .}
   \item{verbose}{ Be verbose.}
 }
@@ -33,10 +36,10 @@
 }
 
 \examples{
-	\donttest{
-	data(yeastPopulation)
-	yeastPopulation <- scan.qtls(yeastPopulation,verbose=TRUE,map="physical",step=1)
-	}
+  \donttest{
+  data(yeastPopulation)
+  yeastPopulation <- scan.qtls(yeastPopulation,verbose=TRUE,map="physical",step=0)
+  }
 }
 
 \seealso{

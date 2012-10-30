@@ -8,14 +8,16 @@
 }
 
 \usage{
-	read.population(offspring="offspring",founders="founders",map="maps",founders_groups,populationType=c("riself", "f2", "bc", "risib"),verbose=FALSE,debugMode=0)
+  read.population(offspring = "offspring", founders = "founders", map = "map",
+    foundersGroups, populationType = c("riself", "f2", "bc", "risib"),
+    readMode = c("normal","HT"), verbose = FALSE, debugMode = 0, ...)
 }
 
 \arguments{
- \item{offspring}{ Core used to specify names of children phenotypic ("core_phenotypes.txt") and genotypic ("core_genotypes.txt") files.}
+ \item{offspring}{ Core used to specify names of children phenotypic ("core_phenotypes.txt") genotypic ("core_genotypes.txt") and annotations ("core_annotations.txt") files.}
  \item{founders}{ Core used to specify names of parental phenotypic ("core_phenotypes.txt") file. }
  \item{map}{ Core used to specify names of genetic ("map_genetic.txt") and physical ("map_physical.txt") map files. }
- \item{founders_groups}{ Specify groups of individuals in founders data, see description below and \code{\link[RankProd]{RP}} for more details }
+ \item{foundersGroups}{ Specify groups of individuals in founders data, see description below and \code{\link[RankProd]{RP}} for more details }
    \item{populationType}{ Type of the population data was obtained from:
    \itemize{
     \item{riself}{ - RILs by selfing.}
@@ -24,8 +26,16 @@
     \item{risib}{ - RILs by sibling mating.}
   } 
  }
+ \item{readMode}{HT, or High-Throughput mode should be used when the very large dataset is processed (at least 10000 probes). Then files are read in chunks intead of at once.
+  To avoid R memory limits, only probes showing differential expression between parent are selected. Size of the chunk and threshold for assesing significance can be specified
+  (see description of ... parameter).}
  \item{verbose}{ Be verbose}
  \item{debugMode}{ 1: Print out checks, 2: print additional time information }
+ \item{...}{ Parameters passed to high-throughtput function:    \itemize{
+    \item{threshold}{ - threshold for assesing probes that are differentially expressed between parents. 0.01 by default.}
+    \item{transformations}{ - how should the data be transformed (see \code{\link{transformation}})}
+    \item{sliceSize}{ - number of lines to be read at once byt HT function. 5000 by default.}
+  }}
 }
 
 \value{
@@ -71,21 +81,22 @@ Founders groups should be c(0,1,0,1,0,1) then. Always use only 0 and 1 to specif
 }
 
 \author{
-	Konrad Zych \email{k.zych@rug.nl}, Danny Arends \email{Danny.Arends@gmail.com}
-	Maintainer: Konrad Zych \email{k.zych@rug.nl}
+  Konrad Zych \email{k.zych@rug.nl}, Danny Arends \email{Danny.Arends@gmail.com}
+  Maintainer: Konrad Zych \email{k.zych@rug.nl}
 }
 
 \examples{
-	\dontrun{
-	### simplest call possible
-	population <- read.population(founders_groups=c(0,0,0,1,1,1))
-	### more informative one
-	population <- read.population(founders_groups=c(0,0,0,1,1,1),verbose=TRUE,debugMode=1)
-	### imagine you prefer parents and children instead of founders and offspring:
-	population <- read.population(offspring="children",founders="parents",founders_groups=c(0,0,0,1,1,1)verbose=TRUE,debugMode=1)
-	### etc.. when you load it, you may want to inspect it:
-	population$founders$phenotypes[1:10,]
-	}
+  \dontrun{
+  ### simplest call possible
+  population <- read.population(founders_groups=c(0,0,0,1,1,1))
+  ### more informative one
+  population <- read.population(founders_groups=c(0,0,0,1,1,1),verbose=TRUE,debugMode=1)
+  ### imagine you prefer parents and children instead of founders and offspring:
+  population <- read.population(offspring="children",founders="parents",
+    founders_groups=c(0,0,0,1,1,1),verbose=TRUE,debugMode=1)
+  ### etc.. when you load it, you may want to inspect it:
+  population$founders$phenotypes[1:10,]
+  }
 }
 
 \seealso{

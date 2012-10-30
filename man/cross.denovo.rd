@@ -14,16 +14,10 @@
 }
 
 \usage{
-cross.denovo(population, 
-             n.chr, 
-             map=c("none", "genetic", "physical"), 
-             comparisonMethod = c(sumMajorityCorrelation, majorityCorrelation, meanCorrelation, majorityOfMarkers),
-             assignFunction=c(assignMaximumNoConflicts, assignMaximum), 
-             reOrder=TRUE, 
-             use.orderMarkers=FALSE, 
-             verbose=FALSE, 
-             debugMode=0)
-	
+cross.denovo(population, n.chr, map=c("none", "genetic", "physical"), 
+  comparisonMethod = c(sumMajorityCorrelation, majorityCorrelation, meanCorrelation,
+  majorityOfMarkers), assignFunction=c(assignMaximumNoConflicts, assignMaximum),
+  reOrder=TRUE, use.orderMarkers=FALSE, verbose=FALSE, debugMode=0, ...)
 }
 
 \arguments{
@@ -55,6 +49,7 @@ cross.denovo(population,
  \item{use.orderMarkers}{should markers on the newly created map be ordered using R/qtl orderMarkers funtion}
  \item{verbose}{ be verbose}
  \item{debugMode}{ 1: Print our checks, 2: print additional time information }
+ \item{...}{ parameters passed directly to the \code{\link[qtl]{formLinkageGroups}} function}
 }
 
 \value{
@@ -73,7 +68,8 @@ assign number to newly created chromosomes.
 
 \examples{
 	data(yeastPopulation)
-	cross <- cross.denovo(yeastPopulation,n.chr=16,verbose=TRUE,map="physical",comparisonMethod=sumMajorityCorrelation, use.orderMarkers=FALSE)
+	cross <- cross.denovo(yeastPopulation,n.chr=16,verbose=TRUE,map="physical",
+  comparisonMethod=sumMajorityCorrelation, use.orderMarkers=FALSE)
 }
 
 \seealso{

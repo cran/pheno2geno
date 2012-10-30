@@ -23,7 +23,7 @@ find.diff.expressed <- function(population,use=c("ttest","rankprod"),verbose=FAL
   #checks
   if(missing(population)) stop("provide population object\n")
   check.population(population)
-  use <- checkParameters.internal(use,c("ttest","rankprod"),"use")
+  use <- match.arg(use)
   if(verbose && debugMode==1) cat("find.diff.expressed starting withour errors in checkpoints.\n")
   
   s<-proc.time()
@@ -56,7 +56,7 @@ find.diff.expressed <- function(population,use=c("ttest","rankprod"),verbose=FAL
 findUsingTTest.internal <- function(phenoRow,groupLabels){
   a <- which(groupLabels==0)
   b <- which(groupLabels==1)
-  if(mean(phenoRow[a]) < mean(phenoRow[b])){
+  if(mean(phenoRow[a],na.rm=T) < mean(phenoRow[b],na.rm=T)){
     what <- "less"
     return(c(0,t.test(phenoRow[a],phenoRow[b],alt=what)$p.value))
   }else{
@@ -83,8 +83,10 @@ showRPpval <- function(population,markers=1:10){
   #checks
   if(missing(population)) stop("provide population object\n")
   check.population(population)
+  if(!is.numeric(markers)) stop("markers parameter must be numeric.\n")
+  if(any(markers<1) || any(markers>nrow(population$founders$phenotypes))) stop("markers parameter must contain only values in between 1 and nr of markers (",nrow(population$founders$phenotypes),").\n")
+  
   if(is.null(population$founders$RP$pval)) stop("Population object does not contain results of RP analysis run find.diff.expressed first.\n")
-  inRangeCheck.internal(markers,"markers",1,nrow(population$founders$phenotypes))
   
   toPrint <- matrix(0,length(markers),2)
   toPrint[,1] <- population$founders$RP$pval[markers,1]
@@ -123,7 +125,9 @@ plotRPpval <- function(population,thresholdRange=c(0.01,0.1,0.01)){
     n.upSelected <- c(n.upSelected,length(which(upNotNull < threshold)))
     n.downSelected <- c(n.downSelected,length(which(downNotNull < threshold)))
   }
-  plot(thrRange,n.upSelected ,main="RP analysis p-values",xlab="p-value",ylab="# markers selected",xlim=c(thresholdRange[1],thresholdRange[2]),ylim=c(min(min(n.upSelected),min(n.downSelected )),max(max(n.upSelected),max(n.downSelected))),type="o")
+  xlim <- c(thresholdRange[1],thresholdRange[2])
+  ylim <- c(min(c(n.upSelected, n.downSelected)),max(c(n.upSelected, n.downSelected)))
+  plot(thrRange,n.upSelected ,main="RP analysis p-values",xlab="p-value",ylab="# markers selected", xlim=xlim, ylim=ylim, type="o")
   points(thrRange,n.downSelected,col="red",type="o")
   legend(x="topleft",legend=c("up regulated","down regulated"),col=c("black","red"),cex=0.8,pch=21,lwd=2,bg="white")
 }

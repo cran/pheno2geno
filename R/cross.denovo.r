@@ -17,14 +17,21 @@
 #  An object of class cross
 #
 cross.denovo <- function(population, n.chr, map=c("none","genetic","physical"), comparisonMethod = c(sumMajorityCorrelation,majorityCorrelation,meanCorrelation,majorityOfMarkers), 
-assignFunction=c(assignMaximumNoConflicts,assignMaximum), reOrder=TRUE, use.orderMarkers=FALSE, verbose=FALSE, debugMode=0){
+assignFunction=c(assignMaximumNoConflicts,assignMaximum), reOrder=TRUE, use.orderMarkers=FALSE, verbose=FALSE, debugMode=0, ...){
   #checks
-  if(missing(population)) stop("provide population object\n")
+  if(missing(population)) stop("Provide a population object.\n")
   check.population(population)
-  map <- match.arg(map)
+
+  if(missing(n.chr))     stop("Provide number of expected chromosomes.\n")
+  if(!is.numeric(n.chr)) stop("Number of expected chromosomes must be a numeric value.\n")
+  if(n.chr < 1)          stop("Number of expected chromosomes must be a positive value.\n")
+  if("noParents" %in% population$flag) n.chr <- n.chr*2 
+
+  map              <- match.arg(map)
   comparisonMethod <- defaultCheck.internal(comparisonMethod,"comparisonMethod",4,sumMajorityCorrelation)
-  assignFunction <- defaultCheck.internal(assignFunction,"assignFunction",2,assignMaximumNoConflicts)
-  cross <- cross.denovo.internal(population,n.chr,verbose=TRUE,debugMode=2)
+  assignFunction   <- defaultCheck.internal(assignFunction,"assignFunction",2,assignMaximumNoConflicts)
+
+  cross            <- cross.denovo.internal(population,n.chr,verbose=TRUE,debugMode=2)
 
   if(length(cross$geno)<=1){
     cat("Selected cross object contains too little chromosomes to assign them, returning it.")
@@ -34,30 +41,38 @@ assignFunction=c(assignMaximumNoConflicts,assignMaximum), reOrder=TRUE, use.orde
 
   if(map=="none"){
     if(reOrder){
-        cross <- formLinkageGroups(cross,reorgMarkers=TRUE,max.rf=0.23)
-        cross <- reduceChromosomesNumber(cross, n.chr)
-        if(use.orderMarkers){
-          cross <- orderMarkers(cross,use.ripple=TRUE,verbose=TRUE)
-        }
-        return(cross)
+      cross <- formLinkageGroups(cross, reorgMarkers=TRUE, ...)
+      cross <- reduceChromosomesNumber(cross, n.chr)
+      if("noParents" %in% population$flags) cross <- mergeInverted(cross, class(population)[2])
+      if(use.orderMarkers) cross <- orderMarkers(cross, use.ripple=TRUE, verbose=TRUE)
+      return(cross)
     }else{
-      assignment <- names(cross$geno)
+      assignment        <- names(cross$geno)
       names(assignment) <- names(cross$geno)
       return(assignment)
     }
   }
   s1 <- proc.time()
   if(map=="genetic"){
+    if(is.null(population$maps$genetic==NULL)) stop("No genetic map provided in population$maps$genetic\n")
     originalMap <- population$maps$genetic
-  }
-  if(map=="physical"){
+  }else if(map=="physical"){
+    if(is.null(population$maps$physical)) stop("No physical map provided in population$maps$physical\n")
     originalMap <- population$maps$physical
+  }
+  cross <- formLinkageGroups(cross,reorgMarkers=TRUE,...)
+  cross <- reduceChromosomesNumber(cross, n.chr)
+  if("noParents" %in% population$flags){
+    cross <- mergeInverted(cross, class(population)[2])
+  }
+  if(use.orderMarkers){
+      cross <- orderMarkers(cross,use.ripple=TRUE,verbose=TRUE)
   }
   chromToChromArray <- comparisonMethod(cross, originalMap, population)
   e1 <- proc.time()
   if(verbose){cat("Calculating correlation matrix done in:",(e1-s1)[3],"seconds.\n")}
   assignment <- assignFunction(chromToChromArray)
-  if(reOrder==FALSE){
+  if(!reOrder){
     if(verbose)cat("Returning new ordering vector.\n")
     invisible(assignment)
   }else{
@@ -68,15 +83,18 @@ assignFunction=c(assignMaximumNoConflicts,assignMaximum), reOrder=TRUE, use.orde
         s0 <- proc.time()
         nmarkersPerChr <- nmar(cross)
         nChr <- length(nmarkersPerChr)
-        e0 <- proc.time()
         cross <- reorganizeMarkersWithin(cross,ordering)
         for(i in 1:nChr){
-          cross <- orderMarkers(cross,use.ripple=TRUE,chr=i,verbose=TRUE)
+          cross <- orderMarkers(cross, use.ripple=TRUE, chr=i, verbose=TRUE)
           e1 <- proc.time()
-          if(i<nChr) te <- ((e1-s0)[3]/sum(nmarkersPerChr[1:i]))*sum(nmarkersPerChr[(i+1):nChr])
-          else te <- 0
+          if(i < nChr){
+            te <- ((e1-s0)[3]/sum(nmarkersPerChr[1:i]))*sum(nmarkersPerChr[(i+1):nChr])
+          }else{ 
+            te <- 0 
+          }
           if(verbose) cat("Done ordering chromosome",i,"/",nChr,"Time remaining:",te,"seconds.\n")
         }
+        e0 <- proc.time()
         if(verbose && debugMode==2)cat("Ordering markers inside the cross object done in:",(e0-s0)[3],"seconds.\n")
     }else{
       cross <- reorganizeMarkersWithin(cross,ordering)
@@ -96,9 +114,7 @@ assignFunction=c(assignMaximumNoConflicts,assignMaximum), reOrder=TRUE, use.orde
 # OUTPUT:
 #  vector of numerics
 ############################################################################################################
-assignMaximum <- function(x, use=2){
-  apply(x,use,which.max)
-}
+assignMaximum <- function(x, use = 2){ apply(x,use,which.max) }
 
 ############################################################################################################
 #                  *** assignMaximumNoConflicts ***
@@ -108,7 +124,7 @@ assignMaximum <- function(x, use=2){
 # OUTPUT:
 #  vector of numerics
 ############################################################################################################
-assignMaximumNoConflicts <- function(x, use=2){
+assignMaximumNoConflicts <- function(x, use = 2){
   assignment <- assignMaximum(x,use)
   notYetAssigned <- as.numeric(names(assignment)[which(!(names(assignment)%in%assignment))])
   while(any(duplicated(assignment))){
@@ -124,6 +140,99 @@ assignMaximumNoConflicts <- function(x, use=2){
       }
     }
   invisible(assignment)
+}
+
+mergeInverted <- function(cross,populationType){
+  chr.correlations           <- matrix(0,nchr(cross),nchr(cross))
+  mar.correlations           <- cor(pull.geno(cross),use="pair")
+  rownames(mar.correlations) <- markernames(cross)
+  colnames(mar.correlations) <- markernames(cross)
+  colnames(chr.correlations) <- 1:nchr(cross)
+  rownames(chr.correlations) <- 1:nchr(cross)
+  for(chr in 1:nchr(cross)){
+    markers1 <- colnames(cross$geno[[chr]]$data)
+    for(chr2 in 1:nchr(cross)){
+      markers2 <- colnames(cross$geno[[chr2]]$data)
+      chr.correlations[chr,chr2] <- mean(mar.correlations[markers1,markers2],na.rm=TRUE)
+    }
+  }
+  corPairs <- t(apply(chr.correlations,1,function(x){names(sort(x))}))
+  colnames(corPairs) <- 1:nchr(cross)
+  done <- NULL
+  new <- 1:nchr(cross)
+  cur <- 1
+  ordering <- vector(mode="numeric",length=sum(nmar(cross)))
+  names(ordering) <- markernames(cross)
+  for(chr in 1:nchr(cross)){
+    if(!(chr %in% done)){
+      done <- c(done,chr)
+      chr2 <- selectChr(chr,corPairs,done)
+      if(!is.null(chr2)){
+        done <- c(done,chr2)
+        MinVal <- chr.correlations[chr,chr2]
+        if(abs(MinVal)>0){
+            markers <- colnames(cross$geno[[chr]]$data)
+            print(markers)
+            markers <- c(markers,colnames(cross$geno[[chr2]]$data))
+            ordering[markers] <- new[cur]
+            cur <- cur + 1
+            if(MinVal<0){
+              RefVal <- chr.correlations[chr,1]
+              if(RefVal < 0){
+                cross <- invertChromosome.internal(cross,chr,populationType)
+              }else{
+                cross <- invertChromosome.internal(cross,chr2,populationType)
+              }
+            }
+        }else{
+          if(chr.correlations[chr,1] < chr.correlations[chr2,1]){
+            cross <- removeChromosomes(cross,chr)
+          }else{
+            cross <- removeChromosomes(cross,chr)
+          }
+        }
+      }
+    }
+  }
+  cross <- reorganizeMarkersWithin(cross, ordering)
+  invisible(cross)
+}
+
+selectChr <- function(chr,corPairs,done){
+  for(i in colnames(corPairs)){
+    if(!(corPairs[chr,i] %in% done)){
+      return(corPairs[chr,i])
+    }
+  }
+  return(NULL)
+}
+
+invertChromosome.internal <- function(cross,chr,populationType){
+  cat("--- Inverting chromosome:",chr,"---\n")
+  if(populationType=="f2"){
+    for(i in chr){
+      if(i %in% 1:nchr(cross)){
+        geno_ <- cross$geno[[i]]$data
+        if(any(geno_==5)) cross$geno[[i]]$data[which(geno_==5)] <- 4
+        if(any(geno_==4)) cross$geno[[i]]$data[which(geno_==4)] <- 5
+        if(any(geno_==3)) cross$geno[[i]]$data[which(geno_==3)] <- 1
+        if(any(geno_==1)) cross$geno[[i]]$data[which(geno_==1)] <- 3
+      }else{
+        stop("Chromosome: ",i," is not in the set!\n")
+      }
+    }
+  }else{
+    for(i in chr){
+      if(i %in% 1:nchr(cross)){
+        geno_ <- cross$geno[[i]]$data
+        if(any(geno_==2)) cross$geno[[i]]$data[which(geno_==2)] <- 1
+        if(any(geno_==1)) cross$geno[[i]]$data[which(geno_==1)] <- 2
+      }else{
+        stop("Chromosome: ",i," is not in the set!\n")
+      }
+    }
+  }
+  invisible(cross)
 }
 
 ############################################################################################################
@@ -285,26 +394,30 @@ majorityOfMarkers <- function(cross,originalMap,population,verbose=FALSE){
 cross.denovo.internal<- function(population,  n.chr,  use=c("rf","geno"), verbose=FALSE, debugMode=0){
   if(missing(n.chr)) stop("n.chr in an obligatory parameter")
   if(missing(population)) stop("no population object provided")
-  use <- checkParameters.internal(use,c("rf","geno"),"use")
+  use <- match.arg(use)
   check.population(population)
   if(is.null(population$offspring$genotypes$simulated)){
     stop("no simulated genotypes in population object, first use generate.biomarkers!\n")
   }
   #*******SAVING CROSS OBJECT*******
   s1 <- proc.time()
-  aa <- tempfile()
-  sink(aa)
-  cross <- genotypesToCross.internal(population,"simulated",verbose=verbose,debugMode=debugMode)
-  #cross <- fill.geno(cross)
-  sink()
-  file.remove(aa)
+  ### creation of the cross
+  tryCatch({
+    aa <- tempfile()
+    sink(aa)
+    cross <- genotypesToCross.internal(population,"simulated",verbose=verbose,debugMode=debugMode)
+  },
+  error= function(err){
+    stop(paste("ERROR in cross.saturate while creating cross:  ",err))
+    sink()            # sink if errored -> otherwise everything is sinked into aa file
+    # file is not removed -> contains output that may help with debugging
+  },
+  finally={
+    sink()
+    file.remove(aa) # no error -> close sink and remove unneeded file
+  })
   e1 <- proc.time()
   if(verbose && debugMode==2)cat("saving data into cross object done in:",(e1-s1)[3],"seconds.\n")
-  
-  #####
-  ######
-  ########## VERY DIRTY HACK
-  #cross <- convert2riself(cross)
   
   #*******CREATING NEW MAP*******
   s1 <- proc.time()
