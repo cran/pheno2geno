@@ -86,11 +86,16 @@
 \alias{switchChromosomes.internal}
 \alias{writeGenotypes.internal}
 \alias{writePhenotypes.internal}
+\alias{selectByLineApply}
+\alias{tTestByLineApply}
 
 \alias{check.population}
 \alias{defaultCheck.internal}
 \alias{createMix.test}
 \alias{is.integer0}
+
+\alias{processInteractions}
+\alias{splitPheno.Apply}
 
 \title{Internal pheno2geno functions}
 
