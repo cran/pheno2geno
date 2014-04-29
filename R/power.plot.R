@@ -43,9 +43,10 @@ power.plot <- function(cross1,cross2,scores,qtlThr=5,nPheno=500,verbose=FALSE,..
     if(is.null(cross2$geno[[1]]$prob)){
       cross2 <- calc.genoprob(cross2)
     }
-    markers  <- sample(1:nphe(cross1),nPheno)
+    markers        <- sort(sample(1:nphe(cross1),nPheno))
     qtlScores1     <- scanone(cross1,pheno.col=markers,verbose=verbose,...)
     qtlScores2     <- scanone(cross2,pheno.col=markers,verbose=verbose,...)
+        
   }else if(class(scores)=="scores"){
     qtlScores1     <- scores[[1]]
     qtlScores2     <- scores[[2]]

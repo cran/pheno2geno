@@ -1,5 +1,5 @@
 Package: pheno2geno
-Version: 1.2.0
+Version: 1.2.1
 Date: May 2014
 Title: Pheno2Geno - Generating genetic markers and maps from molecular
         phenotypes
@@ -9,7 +9,7 @@ Description: Pheno2Geno is an R package for the computational generation genetic
 Depends: R (>= 2.14.1), graphics, stats, utils, qtl, VGAM, mixtools
 Suggests: RankProd
 License: GPL-3
-Packaged: 2014-05-23 12:27:40 UTC; Konrad
+Packaged: 2014-07-28 14:04:24 UTC; Konrad
 NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2014-06-10 13:43:31
+Date/Publication: 2014-07-29 10:54:13

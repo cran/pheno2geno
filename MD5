@@ -1,4 +1,4 @@
-f7c696f543a9c98aebd6b8dec42d78f8 *DESCRIPTION
+cf5a43e17a97e539b153c5b173359828 *DESCRIPTION
 a6999d93618b7dfc98b9c0adf7323793 *NAMESPACE
 bdb9b510e36f9ff4ee0f3f83b7ecb4fc *R/add.to.population.R
 b8b2de9a9608dcc7cd8928fc783f6619 *R/assignLinkageGroups.R
@@ -6,7 +6,7 @@ b8b2de9a9608dcc7cd8928fc783f6619 *R/assignLinkageGroups.R
 4b84425aaa61a0c6cfc04d8ef054847d *R/create.mixtures.R
 ce8b37c26609f19d438f570b927bdf8f *R/create.population.r
 328ba4fb5b252c1cf37a0a5bde57b457 *R/cross.denovo.R
-71d01caac8817ebf500b4a4f324b6302 *R/cross.saturate.R
+d338e9b94ee55e2262ccce0d8a867923 *R/cross.saturate.R
 e7890384df355085babb75fb84aa43ff *R/fake.population.R
 690d92e3ec1379a1e3a5ad442402e314 *R/find.mixups.R
 617a53ad595103f9a838ba0f6993077f *R/findDiffExpressed.R
@@ -18,7 +18,7 @@ f613fdc7447d072698539fdca1421151 *R/markerPlacementPlot.R
 a25b825c5caa866cff0192f4c1c06599 *R/plotMapComparison.R
 055978db254aef64a1c92996cdaf3574 *R/plotRoutines.R
 d58c07be3af6900c8396ed318abe8f84 *R/postprocessing.R
-5fcc7428830a5c3da0bd2a95a22c52bb *R/power.plot.R
+4df007bbece2367c96b316fca163a8db *R/power.plot.R
 10dbf5fc05ce87e3158cd62aa23d1508 *R/qtl.comparison.plot.R
 0af90b22be1c3256a7796d7a8f3c2f41 *R/read.population.R
 4c93fc386b741ef475a21cb24d4248d7 *R/save.gff.R
@@ -28,8 +28,8 @@ b21fe12347854175f8f3ecb26517c866 *R/transformations.R
 c6c524b18fc3ba43f24362a5a075ebf2 *R/write.population.R
 9ed89231523aea4c7dbe6c1b6f337e1a *README.md
 8a05a5031b4d8f45e137119c2aa59909 *data/datalist
-94d948d67c0d648eff13c511e2425b29 *data/yeastCross.rda
-d5e2f9e903a0b6162350f196a1b10b12 *data/yeastPopulation.rda
+88556cdae14b8135b12caf96f1c99229 *data/yeastCross.rda
+5cb97a1d1746fa16087a3873d19fe030 *data/yeastPopulation.rda
 13cac3de174a3449230190f25932c177 *inst/BUGS.txt
 a86ac4554a86d7dc86f4c4dba46b231e *inst/CITATION
 4850a80ef658952849306ba82c066a20 *inst/TODO.txt
@@ -73,7 +73,7 @@ e1ac5ca3a2ac725ea629372cb3168555 *tests/1k/offspring_phenotypes.txt
 2beb99dc6038b0f675a5901ef801e155 *tests/1k/test.r
 d3e87f4702a52f51d400e07d223802b8 *tests/genotypes.csv
 7f2eaa77e8dbe35f5aebcd4303bdc14d *tests/map.csv
-fcfbca680a25807afd912015209fc76e *tests/mycross.csv
+7db0d93af28f6c604506eb4020fb86b4 *tests/mycross.csv
 2cf0f1c9fa7da928173cc3f725b6d132 *tests/offspring_phenotypes.csv
 6e4101faf879fb66d32a48a2c33ee982 *tests/parental_phenotypes.csv
-e086aecc906dda5b6f4696a89b7ff796 *tests/test_analysis.R
+9976511b7ced7112af49d2da435eff5c *tests/test_analysis.R
