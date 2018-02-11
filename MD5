@@ -1,5 +1,5 @@
-133043de698d88fb8d69fedd09c64479 *DESCRIPTION
-4721dae92f8a3d86bcff9bb610ace0cb *NAMESPACE
+895215280d50f1e882f43e385aff9d8e *DESCRIPTION
+5e4c6ca1f399a0cf73906afdbc5259bb *NAMESPACE
 bdb9b510e36f9ff4ee0f3f83b7ecb4fc *R/add.to.population.R
 b8b2de9a9608dcc7cd8928fc783f6619 *R/assignLinkageGroups.R
 418786a25e887907ff3cad95ac95e48e *R/checks.R
@@ -26,7 +26,7 @@ d58c07be3af6900c8396ed318abe8f84 *R/postprocessing.R
 b21fe12347854175f8f3ecb26517c866 *R/transformations.R
 3616ad346401dd8e1ee5de25e6f98650 *R/utilities.R
 c6c524b18fc3ba43f24362a5a075ebf2 *R/write.population.R
-f25010bc6abef8ba4a2c24618f42b7e9 *README.md
+d30a0b5b936cab0a9a1ea5a1316ac15a *README.md
 c6f22bd783c8ea4eae92fe831a3a527c *data/datalist
 4f2dcab0e4b7fb078e00106cff63d6e9 *data/testCross.rda
 756f709d4e7ed5df18f7f99ac6b44494 *data/testPopulation.rda
@@ -36,7 +36,7 @@ a86ac4554a86d7dc86f4c4dba46b231e *inst/CITATION
 a1004f815f82403cd6eb5b68362da9a6 *man/RPpval.rd
 57a3baf838aca3f7887ba4a275ab14bb *man/add.to.population.rd
 70cb7b1bff95f43d351e0d1e8d991d81 *man/assignedChrToMarkers.rd
-b4069d649aa99223103c3630e4e66e6f *man/changeChromNumber.rd
+547d79d210cece3d6d63774adf0871cb *man/changeChromNumber.rd
 72aeca1f614deef24d9ac3f5d8f2fb5d *man/create.population.rd
 499627aae2b5364d4020f532bdad2afc *man/cross.denovo.rd
 570f4d44db19f763fd4cffadd982da5e *man/cross.saturate.rd
